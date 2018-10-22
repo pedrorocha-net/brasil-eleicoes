@@ -1,0 +1,10 @@
+{
+    "name": "pedrorocha/crawler-eleicoes2018",
+    "authors": [
+        {
+            "name": "Pedro Rocha",
+            "email": "pedrogomesrocha@gmail.com"
+        }
+    ],
+    "require": {}
+}
