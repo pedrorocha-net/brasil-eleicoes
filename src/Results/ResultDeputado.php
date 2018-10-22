@@ -1,9 +1,9 @@
 <?php
 
-class ResultDepEstadual implements ResultInterface {
+class ResultDeputado implements ResultInterface {
 
   public function getHeader() {
-    return [
+    $item = [
       'Partido',
       'Cargo',
       'Numero',
@@ -17,10 +17,16 @@ class ResultDepEstadual implements ResultInterface {
       'Total',
       'Votos',
     ];
+    foreach (array_keys(get_object_vars($this)) as $field) {
+      if (strpos($field, 'Z_') !== FALSE) {
+        $item[] = $field;
+      }
+    }
+    return $item;
   }
 
   public function getData() {
-    return [
+    $item = [
       $this->partidoSigla,
       $this->cargo,
       $this->candidatoNumero,
@@ -34,14 +40,25 @@ class ResultDepEstadual implements ResultInterface {
       $this->totalRecebido,
       $this->votosTotal,
     ];
+    foreach (get_object_vars($this) as $key => $field) {
+      if (strpos($key, 'Z_') !== FALSE) {
+        $item[] = $field;
+      }
+    }
+    return $item;
   }
 
-  public function __construct($uf, $ano, $record) {
+  public function __construct($uf, $ano, $cargo_id, $record) {
     $this->id = $record[15];
     $this->uf = $uf;
     $this->ano = $ano;
-    $this->cargo_id = CODIGO_CARGO_DEP_ESTADUAL;
-    $this->cargo = 'Dep Estadual';
+    $this->cargo_id = $cargo_id;
+    if ($this->cargo_id == CODIGO_CARGO_DEP_FEDERAL) {
+      $this->cargo = 'Dep Federal';
+    }
+    else {
+      $this->cargo = 'Dep Estadual';
+    }
     $this->partidoNumero = $record[27];
     $this->partidoSigla = $record[28];
     $this->candidatoNumero = $record[16];
@@ -89,17 +106,17 @@ class ResultDepEstadual implements ResultInterface {
         'totalRecebido',
       ];
       foreach ($fields as $field) {
-        $this->$field = (int) $record_contas->dadosConsolidados->$field;
+        $this->$field = (float) $record_contas->dadosConsolidados->$field;
       }
-      $this->fundosPartidarios = (int) $record_contas->despesas->fundosPartidarios;
-      $this->fundoEspecial = (int) $record_contas->despesas->fundoEspecial;
+      $this->fundosPartidarios = (float) $record_contas->despesas->fundosPartidarios;
+      $this->fundoEspecial = (float) $record_contas->despesas->fundoEspecial;
     }
 
-    //    foreach ($record_votacao['cidades'] as $c_key => $cidade) {
-    //      foreach ($cidade['zonas'] as $z_key => $zona) {
-    //        $this->votosTotal = $record_votacao['total'];
-    //      }
-    //    }
+    $this->votosTotal = $record_votacao['total'];
+
+    foreach (array_keys($record_votacao['zonas']) as $zona_numero) {
+      $this->{'Z_' . $zona_numero} = $record_votacao['zonas'][$zona_numero];
+    }
   }
 
   public function getAPIData() {
@@ -117,7 +134,12 @@ class ResultDepEstadual implements ResultInterface {
   }
 
   public function getFileName() {
-    return "DepEstadual_" . $this->ano . "_" . $this->uf . "_recursos_votos";
+    if ($this->cargo_id == CODIGO_CARGO_DEP_FEDERAL) {
+      return "DepFederal_" . $this->ano . "_" . $this->uf . "_recursos_votos";
+    }
+    else {
+      return "DepEstadual_" . $this->ano . "_" . $this->uf . "_recursos_votos";
+    }
   }
 }
 

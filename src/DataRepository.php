@@ -1,7 +1,6 @@
 <?php
 
 class DataRepository {
-  //$data_files['prestacao_de_contas'] = "./data/prestacao_de_contas_eleitorais_candidatos_${ano}/despesas_contratadas_candidatos_${ano}_${uf}.csv";
 
   public function __construct($ano, $uf, $codigo_cargo) {
     $this->ano = $ano;
@@ -22,17 +21,7 @@ class DataRepository {
           continue;
         }
         if ($line[13] == $this->codigo_cargo && $line[25] == 'DEFERIDO') {
-          switch ($this->codigo_cargo) {
-            case CODIGO_CARGO_DEP_FEDERAL:
-              $Result = new ResultDepFederal($this->uf, $this->ano, $line);
-              break;
-            case CODIGO_CARGO_DEP_ESTADUAL:
-              $Result = new ResultDepEstadual($this->uf, $this->ano, $line);
-              break;
-          }
-          if (isset($Result)) {
-            $candidaturas[] = $Result;
-          }
+          $candidaturas[] = new ResultDeputado($this->uf, $this->ano, $this->codigo_cargo, $line);
         }
       }
 
@@ -46,8 +35,17 @@ class DataRepository {
 
   public function getDadosVotacao() {
     $data_votacao = [];
-    $file_path = './data/votacao_candidato_munzona_' . $this->ano . '/votacao_candidato_munzona_' . $this->ano . '_' . $this->uf . '.csv';
 
+    $file = file('./data/lista_zonas_eleitorais_' . $this->uf . '.csv');
+    $zonas = [];
+    foreach ($file as $key => $zona) {
+      if ($key === 0) {
+        continue;
+      }
+      $zonas[] = (int) str_replace('"', '', explode(',', $zona)[0]);
+    }
+
+    $file_path = './data/votacao_candidato_munzona_' . $this->ano . '/votacao_candidato_munzona_' . $this->ano . '_' . $this->uf . '.csv';
     $handle = fopen($file_path, "r");
     if ($handle) {
       $first_line = TRUE;
@@ -56,23 +54,19 @@ class DataRepository {
           $first_line = FALSE;
           continue;
         }
+
         if (!isset($data_votacao[$line[18]])) {
           $data_votacao[$line[18]] = [
-            'cidades' => [],
-            'total' => 0
+            'zonas' => [],
+            'total' => 0,
           ];
+          foreach ($zonas as $zona) {
+            $data_votacao[$line[18]]['zonas'][$zona] = 0;
+          }
         }
-        if (!isset($data_votacao[$line[18]]['cidades'][$line[13]])) {
-          $data_votacao[$line[18]]['cidades'][$line[13]] = [
-            'nome' => $line[14],
-            'zonas' => []
-          ];
-        }
-        $data_votacao[$line[18]]['total'] += $line[37];
-        $data_votacao[$line[18]]['cidades'][$line[13]]['zonas'][] = [
-          'zonaNumero' => $line[15],
-          'votos' => $line[37]
-        ];
+
+        $data_votacao[$line[18]]['total'] += (int) $line[37];
+        $data_votacao[$line[18]]['zonas'][$line[15]] = (int) $line[37];
       }
       fclose($handle);
     }
@@ -81,6 +75,35 @@ class DataRepository {
     }
     return $data_votacao;
   }
+
+  //  public function getDadosPrestacaoContas() {
+  //    $data_files['prestacao_de_contas'] = "./data/prestacao_de_contas_eleitorais_candidatos_${ano}/despesas_contratadas_candidatos_${ano}_${uf}.csv";
+  //    $handle = fopen($data_files['prestacao_de_contas'], "r");
+  //    if ($handle) {
+  //      foreach ($candidaturas as $candidatura) {
+  //        $first_line = TRUE;
+  //        while (($line = fgetcsv($handle, 0, ';')) !== FALSE) {
+  //          print_r($line);
+  //          die();
+  //          //      if ($first_line) {
+  //          //        $first_line = FALSE;
+  //          //        continue;
+  //          //      }
+  //          //        if ($line[13] == $codigo_cargo) {
+  //          //          $Result = new ResultDepEstadual($uf, $ano, $line[15]);
+  //          //          $Result->processRecord($line);
+  //          //        }
+  //          $candidatura->processRecord($line, 2);
+  //        }
+  //      }
+  //      fclose($handle);
+  //    }
+  //    else {
+  //      print 'Erro abrindo o arquivo votacao_candidato_munzona';
+  //    }
+  //
+  //    print_r($candidaturas[0]);
+  //  }
 }
 
 ?>

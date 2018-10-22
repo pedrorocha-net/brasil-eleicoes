@@ -1,12 +1,11 @@
 <?php
 
 include_once './src/Results/ResultInterface.php';
-include_once './src/Results/ResultDepEstadual.php';
-include_once './src/Results/ResultDepFederal.php';
+include_once './src/Results/ResultDeputado.php';
 include_once './src/DataRepository.php';
 
-define('CODIGO_CARGO_DEP_ESTADUAL', 7);
 define('CODIGO_CARGO_DEP_FEDERAL', 6);
+define('CODIGO_CARGO_DEP_ESTADUAL', 7);
 
 $ano = 2018;
 $uf = 'RJ';
@@ -30,9 +29,9 @@ foreach ($candidaturas as &$candidatura) {
 }
 
 $fp = fopen('./results/' . $candidaturas[0]->getFileName() . '.csv', 'w');
-fputcsv($fp, $candidaturas[0]->getHeader(), ';'); // Header
+fputcsv($fp, $candidaturas[0]->getHeader());
 foreach ($candidaturas as $candidatura) {
-  fputcsv($fp, $candidatura->getData(), ';');
+  fputcsv($fp, $candidatura->getData());
 }
 fclose($fp);
 
